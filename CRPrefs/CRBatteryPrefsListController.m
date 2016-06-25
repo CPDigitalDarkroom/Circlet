@@ -12,7 +12,7 @@
 
 - (void)loadView {
 	[super loadView];
-	
+
 	HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:@"com.insanj.circlet"];
 	NSInteger style = [preferences integerForKey:@"batteryStyle" default:-1];
 
@@ -30,6 +30,7 @@
 	[titles removeObject:@"Red (Default)"];
 	[titles removeObject:@"White (Default)"];
 	[titles removeObject:@"Green"];
+	[titles removeObject:@"Yellow (Default)"];
 	return titles;
 }
 
@@ -44,11 +45,27 @@
 	[titles removeObject:@"Red"];
 	[titles removeObject:@"White (Default)"];
 	[titles removeObject:@"Green (Default)"];
+	[titles removeObject:@"Yellow (Default)"];
 	return titles;
 }
 
 - (NSArray *)lowPowerColorValues:(id)target {
 	return [self lowPowerColorTitles:target];
+}
+
+- (NSArray *)lowPowerModeColorTitles:(id)target {
+	NSMutableArray *titles = [[NSMutableArray alloc] initWithArray:[[CRTITLETOCOLOR allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)]];
+	[titles insertObject:@"Custom" atIndex:0];
+	[titles removeObject:@"Black (Default)"];
+	[titles removeObject:@"Red (Default)"];
+	[titles removeObject:@"White (Default)"];
+	[titles removeObject:@"Green (Default)"];
+	[titles removeObject:@"Yellow"];
+	return titles;
+}
+
+- (NSArray *)lowPowerModeColorValues:(id)target {
+	return [self lowPowerModeColorTitles:target];
 }
 
 @end

@@ -157,7 +157,7 @@ static UIColor * circletColorForKey(BOOL light, NSString *key) {
 	}
 
 	else if (!value || !valueInDict) {
-		if ([key rangeOfString:@"lowBattery"].location != NSNotFound) {
+		if ([key rangeOfString:@"lowPower"].location != NSNotFound) {
 			return titleToColor[@"Yellow"];
 		}
 
@@ -573,7 +573,12 @@ static CRAlertViewDelegate *circletAVDelegate;
 
 	UIImage *image;
 	UIColor *imageColor;
-	if (state != 0) {
+
+	if(isLowPowerMode) {
+		imageColor = circletColorForPosition(white, CircletPositionLowPowerMode);
+	}
+
+	else if (state != 0) {
 		imageColor = circletColorForPosition(white, CircletPositionCharging);
 	}
 
