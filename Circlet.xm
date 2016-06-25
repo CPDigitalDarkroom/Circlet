@@ -67,6 +67,7 @@ static CGFloat circletRadiusFromPosition(CircletPosition posit) {
 		case CircletPositionBattery:
 		case CircletPositionCharging:
 		case CircletPositionLowBattery:
+		case CircletPositionLowPowerMode:
 			return [preferences floatForKey:@"batterySize" default:CRDEFAULTRADIUS];
 	}
 }
@@ -79,7 +80,7 @@ static CGFloat circletWidthFromPosition(CircletPosition posit) {
 		case CircletPositionSignal:
 			side = [preferences floatForKey:@"signalSize" default:CRDEFAULTRADIUS];
 			break;
-		case CircletPositionWifi: 
+		case CircletPositionWifi:
 			side = [preferences floatForKey:@"wifiSize" default:CRDEFAULTRADIUS];
 			break;
 		case CircletPositionData:
@@ -92,6 +93,7 @@ static CGFloat circletWidthFromPosition(CircletPosition posit) {
 		case CircletPositionBattery:
 		case CircletPositionCharging:
 		case CircletPositionLowBattery:
+		case CircletPositionLowPowerMode:
 			side = [preferences floatForKey:@"batterySize" default:CRDEFAULTRADIUS];
 			break;
 	}
@@ -127,6 +129,7 @@ static CircletStyle circletStyleFromPosition(CircletPosition posit) {
 		case CircletPositionBattery:
 		case CircletPositionCharging:
 		case CircletPositionLowBattery:
+		case CircletPositionLowPowerMode:
 			style = [preferences integerForKey:@"batteryStyle" default:CircletStyleFill];
 			invert = [preferences boolForKey:@"batteryInvert"];
 			break;
@@ -154,6 +157,10 @@ static UIColor * circletColorForKey(BOOL light, NSString *key) {
 	}
 
 	else if (!value || !valueInDict) {
+		if ([key rangeOfString:@"lowBattery"].location != NSNotFound) {
+			return titleToColor[@"Yellow"];
+		}
+
 		if ([key rangeOfString:@"lowBattery"].location != NSNotFound) {
 			return titleToColor[@"Red"];
 		}
@@ -196,6 +203,9 @@ static UIColor * circletColorForPosition(BOOL light, CircletPosition posit){
 			break;
 		case CircletPositionLowBattery:
 			positionPrefix = @"lowBattery";
+			break;
+		case CircletPositionLowPowerMode:
+			positionPrefix = @"lowPower";
 			break;
 	}
 
@@ -333,7 +343,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 	HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:@"com.insanj.circlet"];
 	CGFloat radius;
 	CircletStyle style;
-	
+
 	BOOL showOutline;
 	CGFloat lessenedThickness;
 
@@ -344,9 +354,9 @@ static CRAlertViewDelegate *circletAVDelegate;
 	if (networkType != 5) {
 		radius = circletRadiusFromPosition(CircletPositionData);
 		style = circletStyleFromPosition(CircletPositionData);
-	
+
 		showOutline = [preferences boolForKey:@"dataOutline" default:YES];
-	
+
 		lessenedThickness = radius * LESSENED_THICKNESS(style);
 
 		CTRadioAccessTechnology *radioTechnology = [[CTRadioAccessTechnology alloc] init];
@@ -408,9 +418,9 @@ static CRAlertViewDelegate *circletAVDelegate;
 	else {
 		radius = circletRadiusFromPosition(CircletPositionWifi);
 		style = circletStyleFromPosition(CircletPositionWifi);
-	
+
 		showOutline = [preferences boolForKey:@"wifiOutline" default:YES];
-	
+
 		lessenedThickness = radius * LESSENED_THICKNESS(style);
 
 		int wifiState = MSHookIvar<int>(self, "_wifiStrengthBars");
@@ -484,7 +494,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 	else {
 		NSString *serviceString = MSHookIvar<NSString *>(self, "_serviceString");
 		NSString *serviceSingleString = serviceString && serviceString.length > 0 ? [serviceString substringToIndex:1] : @"C";
-	 
+
 		return [UIImage circletWithColor:light radius:radius string:serviceSingleString invert:YES thickness:lessenedThickness];
 	}
 }
@@ -492,14 +502,14 @@ static CRAlertViewDelegate *circletAVDelegate;
 %end
 
 %hook UIStatusBarTimeItemView
- 
+
 %new - (UIImage *)circletContentsImageForWhite:(BOOL)white string:(NSString *)timeString {
 	HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:@"com.insanj.circlet"];
 	CRLOG(@"time circlet contents image for %@", self);
 
 	CGFloat radius = circletRadiusFromPosition(CircletPositionTimeMinute);
 	NSDateComponents *components = [[NSCalendar currentCalendar] components:(NSHourCalendarUnit | NSMinuteCalendarUnit) fromDate:[NSDate date]];
-	
+
 	CircletStyle style = circletStyleFromPosition(CircletPositionTimeMinute);
 	BOOL showOutline = [preferences boolForKey:@"timeOutline" default:YES];
 
@@ -525,7 +535,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 
 	if (showOutline) {
 		return [UIImage doubleCircletWithLeftColor:circletColorForPosition(white, CircletPositionTimeHour) rightColor:circletColorForPosition(white, CircletPositionTimeMinute) radius:radius leftPercentage:hour rightPercentage:minute style:style];
-	} 
+	}
 
 	else {
 		return [UIImage doubleCircletWithLeftColor:circletColorForPosition(white, CircletPositionTimeHour) rightColor:circletColorForPosition(white, CircletPositionTimeMinute) radius:radius leftPercentage:hour rightPercentage:minute style:style thickness:0.0];
@@ -547,6 +557,14 @@ static CRAlertViewDelegate *circletAVDelegate;
 	CGFloat radius = circletRadiusFromPosition(CircletPositionBattery);
 	CircletStyle style = circletStyleFromPosition(CircletPositionBattery);
 	CGFloat lessenedThickness = radius * LESSENED_THICKNESS(style);
+
+	BOOL isLowPowerMode = NO;
+
+	if(IS_IOS_OR_OLDER(iOS_9_0)) {
+		if(([[NSClassFromString(@"_CDBatterySaver") batterySaver] getPowerMode] == 1)) {
+			isLowPowerMode = YES;
+		}
+	}
 
 	CGFloat percentage = level / 100.0;
 	if (lessenedThickness > 0.0) {
@@ -611,7 +629,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 
 %hook SBLockScreenManager
 
-- (void)_finishUIUnlockFromSource:(int)source withOptions:(id)options { 
+- (void)_finishUIUnlockFromSource:(int)source withOptions:(id)options {
 	%orig();
 	HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:@"com.insanj.circlet"];
 
@@ -638,7 +656,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 	if (shouldOverride) {
 		CGFloat w, a;
 		[[[self foregroundStyle] textColorForStyle:[self legibilityStyle]] getWhite:&w alpha:&a];
-		
+
 		UIImage *image = [self circletContentsImageForWhite:(w >= 0.5)];
 		return [%c(_UILegibilityImageSet) imageFromImage:image withShadowImage:image];
 	}
@@ -657,7 +675,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 	if (shouldOverride) {
 		CGFloat w, a;
 		[[[self foregroundStyle] textColorForStyle:[self legibilityStyle]] getWhite:&w alpha:&a];
-		
+
 		UIImage *image = [self circletContentsImageForWhite:(w >= 0.5)];
 		return [%c(_UILegibilityImageSet) imageFromImage:image withShadowImage:image];
 	}
@@ -680,7 +698,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 	if (shouldOverride) {
 		CGFloat w, a;
 		[[[self foregroundStyle] textColorForStyle:[self legibilityStyle]] getWhite:&w alpha:&a];
-		
+
 		UIImage *image = [self circletContentsImageForWhite:(w >= 0.5)];
 		return [%c(_UILegibilityImageSet) imageFromImage:image withShadowImage:image];
 	}
@@ -716,7 +734,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 
 %hook UIStatusBarBatteryItemView
 
-- (id)_accessoryImage {	
+- (id)_accessoryImage {
 	HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:@"com.insanj.circlet"];
 	BOOL shouldOverride = circletEnabledForClassname(NSStringFromClass([self class]));
 	BOOL showBolt = [preferences boolForKey:@"showBolt"];
@@ -735,7 +753,7 @@ static CRAlertViewDelegate *circletAVDelegate;
 	if (shouldOverride) {
 		CGFloat w, a;
 		[[[self foregroundStyle] textColorForStyle:[self legibilityStyle]] getWhite:&w alpha:&a];
-		
+
 		UIImage *image = [self circletContentsImageForWhite:(w >= 0.5)];
 		return [%c(_UILegibilityImageSet) imageFromImage:image withShadowImage:image];
 	}

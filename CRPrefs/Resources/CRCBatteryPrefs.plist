@@ -108,6 +108,17 @@
             <key>valuesDataSource</key>  <string>lowPowerColorValues:</string>
         </dict>
 
+        <dict>
+            <key>cell</key>         <string>PSLinkListCell</string>
+            <key>defaults</key>     <string>com.insanj.circlet</string>
+            <key>detail</key>       <string>CRListItemsController</string>
+            <key>key</key>          <string>lowBatteryModeLightColor</string>
+            <key>label</key>        <string>Low Power Mode Color</string>
+            <key>PostNotification</key>  <string>com.insanj.circlet/ReloadPrefs</string>
+            <key>titlesDataSource</key>  <string>lowPowerModeColorTitles:</string>
+            <key>valuesDataSource</key>  <string>lowPowerModeColorValues:</string>
+        </dict>
+
          <dict>
             <key>cell</key>             <string>PSGroupCell</string>
             <key>footerText</key>       <string>No respring required.</string>

@@ -1,7 +1,7 @@
 TARGET =: clang
 ARCHS = armv7 armv7s arm64
 
-include theos/makefiles/common.mk
+include $(THEOS)/makefiles/common.mk
 
 BUNDLE_NAME = CRPrefs
 CRPrefs_FILES = $(wildcard *.xm) $(wildcard *.m) ../UIImage+Circlet.m

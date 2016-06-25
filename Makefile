@@ -1,9 +1,9 @@
 THEOS_PACKAGE_DIR_NAME = debs
-TARGET =: clang
+TARGET =: clang:latest:7.0
 ARCHS = armv7 armv7s arm64
 DEBUG = 1
 
-include theos/makefiles/common.mk
+include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = Circlet
 Circlet_FILES = Circlet.xm UIImage+Circlet.m Reachability/Reachability.m
